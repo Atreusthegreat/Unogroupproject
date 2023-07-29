@@ -1,5 +1,9 @@
 package Uno;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
@@ -9,10 +13,10 @@ public class gameManager {
 	static Scanner scnr = new Scanner(System.in);
 
 	private static int playerCount;
-	private static ArrayList<player> players = new ArrayList<>();
-	private static player currentPlayer;
+	private static ArrayList<Player> players = new ArrayList<>();
+	private static Player currentPlayer;
 	private static boolean currentturn;
-	private static player selectedPlayer;
+	private static Player selectedPlayer;
 	private static boolean winner;
 	
 	
@@ -28,18 +32,18 @@ public class gameManager {
 	
 	//gets next player 
 	public void nextTurn() {
+		if (currentturn) {
+			currentPlayer = players.get((players.indexOf(currentPlayer) + 1) % players.size());
+			currentturn = false;
+		}else {
+			currentturn = true;
+		}
  
 	}
 	
 	//gets the players hand 
 	public void getHand() {
-		currentPlayer.getdeck();
-	}
-	
-	
-	//gets the card form player??
-	public void getCard() {
-		currentPlayer.getCard();
+		currentPlayer.getPlayerHand();
 	}
 	
 	
@@ -56,6 +60,9 @@ public class gameManager {
 	//skips next players turn if skipped
 	public void skip() {
 
+		if (currentPlayer.getCard().getAction() == Actions.SKIP) {
+			currentPlayer = players.get((players.indexOf(currentPlayer) + players.size() + 2) % players.size());
+		}
 	}
 	
 	//reverse derections of players 
@@ -69,6 +76,24 @@ public class gameManager {
 	}
 	
 	public void saveGame() {
+		
+		
+		Tester tester = new Tester();
+
+		try ( FileOutputStream fileOut = new FileOutputStream("savedGame.ser");
+				ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+			
+			out.writeObject(tester);
+			out.close();
+			fileOut.close();
+			
+			System.out.println("Game is saved");
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException f) {
+			f.printStackTrace();
+		}
 		
 	}
 	
@@ -84,7 +109,6 @@ public class gameManager {
 	public static void main(String[] args) {
 
 		Deck deck = new Deck();
-		deck.shuffleDeck();
 		
 		do {
 			System.out.println("Enter the number of players (2-4): ");
@@ -96,11 +120,11 @@ public class gameManager {
 		for (int i = 1; i <= playerCount; i++) {
 	        System.out.println("Enter name for Player " + i + ": ");
 	        String name = scnr.next();
-	        player p = new player(name, new ArrayList<>());
+	        Player p = new Player(name);
 
 	        // Give each player 7 cards from the deck
 	        for (int j = 0; j < 7; j++) {
-	            card drawnCard = deck.drawCard();
+	            Card drawnCard = deck.drawCard();
 	            if (drawnCard != null) {
 	                p.getPlayerHand().add(drawnCard);
 	            } else {
@@ -112,9 +136,15 @@ public class gameManager {
 	        players.add(p);
 	    }
 		
-		for (player p : players) {
-			System.out.println("Player Name: " + p.getName());
+		for (Player p : players) {
+			System.out.println("Player Name: " + p.getPlayerName());
+			System.out.println("Player Hand: ");
+			for(Card card: p.getPlayerHand()) {
+				System.out.println(card + " ");
+			}
+			System.out.println();
 		}
+		
 		
 		
 	}
